@@ -1,8 +1,12 @@
 
 # coding: utf-8
+"""
+module for providing some useful functions
+"""
 
 import sys
-import numpy as np 
+import random
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 sys.path.append("/home/share/libraries/bdpy")
@@ -12,23 +16,25 @@ from bdpy.ml import add_bias, make_cvindex
 from bdpy.stats import corrcoef
 from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 
 
-
-
 # list for sampling features
-NUM_FEATURES = [i for i in range(1, 100)] + [i * 50 for i in range(2, 40)]
 
-
-
-# ventricle: 0, article: 1
 # choose 71 samples from vertricle and make test data and label data
-def make_dataset(v_spec, a_spec):
+def make_dataset(v_spec, a_spec, shuffle=False):
     """
-    choose 71 samples from vertricle and make test data and label data
+    randomely choose 71 samples from vertricle and make test data and label data
+    parameter:
+        v_spec: np.array. ventricle data(n * features)
+        a_spec: np.array. article data(n * features)
+        shuffle: Bool. default = False
+            if True, shuffle the data
+    return:
+        (data, label)
+        data: np.array 
+        label: np.array
+            label for dataset. 0 for ventricle and 1 for article
     """
     N = a_spec.shape[0]
     choice = np.random.choice(v_spec.shape[0], N)
@@ -36,13 +42,24 @@ def make_dataset(v_spec, a_spec):
     data = np.vstack((v_spec_random, a_spec))
     # create dataset and labels(v: 0, a:1)
     label = label = np.array([0] * N + [1] * N)
+    # shuffle data and label if shuffle == True
+    if shuffle:
+        random_index = [i for i in range(data.shape[0])]
+        random.shuffle(random_index)
+        data = data[random_index]
+        label = label[random_index]
     return data, label
-
 
 
 def cross_validation(data, label, n=10):
     """
-    return list of train_data, test_data, train_label, test_label
+    return list of train_data, test_data, train_label, test_label for given data, labek
+
+    parameter:
+        data: np.array
+        label: np.array
+        n: int
+            number of fold
     return
         list: list of shape(n, 4)
     """
@@ -60,7 +77,6 @@ def cross_validation(data, label, n=10):
     return cross_valid
 
 
-
 # use linar SVM and calculate the score
 def classify(train_data, test_data, train_label, test_label, n_features):
     # scale data
@@ -75,22 +91,3 @@ def classify(train_data, test_data, train_label, test_label, n_features):
     # get score
     score = clf.score(scaled_test_data[:, :n_features], test_label)
     return score
-
-if __name__  == "__main__":
-    # load data"
-    v_spec = np.load("ventricle_spectrum.npy")
-    a_spec = np.load("article_spectrum.npy")
-
-    # put data to score_record and get sum 
-    print("A")
-    score_record = np.zeros(len(NUM_FEATURES))
-    for i in range(10):
-        print("iteration number{0}".format(i))
-        data, label = make_dataset(v_spec, a_spec)
-        cross_valid = cross_validation(data, label)
-        # for each train-test in cross validation
-        for  train_data, test_data, train_label, test_label in cross_valid:
-            for count, num_features in enumerate(NUM_FEATURES):
-                score = classify(train_data, test_data, train_label, test_label, num_features)
-                score_record[count] += score
-
