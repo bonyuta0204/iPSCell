@@ -36,10 +36,15 @@ def make_dataset(v_spec, a_spec, shuffle=False):
         label: np.array
             label for dataset. 0 for ventricle and 1 for article
     """
-    N = a_spec.shape[0]
-    choice = np.random.choice(v_spec.shape[0], N)
-    v_spec_random = v_spec[choice]
-    data = np.vstack((v_spec_random, a_spec))
+    N = np.min((a_spec.shape[0], v_spec.shape[0]))
+    v_random = np.random.permutation(v_spec)
+    v_random = v_random[:N]
+
+    a_random = np.random.permutation(a_spec)
+    a_random = a_random[:N]
+
+    data = np.vstack((v_random, a_random))
+
     # create dataset and labels(v: 0, a:1)
     label = label = np.array([0] * N + [1] * N)
     # shuffle data and label if shuffle == True
@@ -91,3 +96,10 @@ def classify(train_data, test_data, train_label, test_label, n_features):
     # get score
     score = clf.score(scaled_test_data[:, :n_features], test_label)
     return score
+
+# for testing this module
+if __name__  ==  "__main__":
+    v_spec = np.load("record/ventricle_spectrum.npy")
+    a_spec = np.load("record/article_spectrum.npy")
+    data, label = make_dataset(v_spec, a_spec)
+    print(data, label)
